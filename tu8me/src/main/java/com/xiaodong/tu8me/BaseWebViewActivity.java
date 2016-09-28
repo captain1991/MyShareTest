@@ -17,6 +17,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.xiaodong.tu8me.utils.CommonUtils;
@@ -39,13 +40,17 @@ import java.util.Map;
 /**
  * Created by yxd on 2016/9/28.
  */
-public class BaseWebViewActivity extends FragmentActivity {
+public class BaseWebViewActivity extends FragmentActivity implements View.OnClickListener {
     private WebView webView;
     private ProgressBar progressBar;
+    private MyTask task;
+    private TextView textView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_yqhy);
+        textView = (TextView) findViewById(R.id.shuoming);
+        textView.setOnClickListener(this);
         webView = (WebView) findViewById(R.id.webView);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         WvSettings.setting(webView);
@@ -61,14 +66,16 @@ public class BaseWebViewActivity extends FragmentActivity {
             }
         });
 
-        webView.setWebViewClient(new WebViewClient(){
+        webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
 //                dealResponse = true;
-                workOnAndroid(url,view);
+                workOnAndroid(url, view);
                 return true;
             }
         });
+
+        webView.loadUrl("http://a.mjcydb.com/");
     }
 
     /**
@@ -170,8 +177,10 @@ public class BaseWebViewActivity extends FragmentActivity {
 
                 ClipData mClipData = ClipData.newPlainText("Label", des);
                 ((ClipboardManager)getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(mClipData);
+                Log.e("content========", des);
                 Toast.makeText(BaseWebViewActivity.this, "标题已复制到剪贴板，可在分享页面直接粘贴", Toast.LENGTH_LONG).show();
-                new MyTask().execute(imgurl);
+                task = new MyTask();
+                       task.execute(imgurl);
 
 //                ArrayList localArrayList = new ArrayList();
 //                Log.e("path==========", Environment.getExternalStorageDirectory().getAbsolutePath());
@@ -190,6 +199,12 @@ public class BaseWebViewActivity extends FragmentActivity {
         }
     }
 
+    @Override
+    public void onClick(View v) {
+        Intent intent = new Intent(this,ShuomingActivity.class);
+        startActivity(intent);
+    }
+
     class MyTask extends AsyncTask<String,Void,ArrayList>{
 
         @Override
@@ -206,21 +221,31 @@ public class BaseWebViewActivity extends FragmentActivity {
             String[] urls = params[0].split(";");
             int i = 0;
             for(String u:urls){
-                if(i<5)
+                if(i<8)
                 try {
                     i++;
+                    Log.e("url====",u);
                     String name = ""+System.currentTimeMillis()+".jpg";
                     imgNames.add(name);
                     File file1 = new File(file,name);
                     FileOutputStream fos = new FileOutputStream(file1);
                     URL url = new URL(u);
                     HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setConnectTimeout(3000);
                     urlConnection.connect();
                     InputStream in = urlConnection.getInputStream();
-                    fos.write(in.read());
+
+//                    BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
+                    int len;
+                    byte[] bytes = new byte[1024];
+
+                    while ((len = in.read(bytes))>0) {
+                        fos.write(bytes,0,len);
+                    }
                     fos.flush();
                     in.close();
                     fos.close();
+                    Log.e("file1path====",file1.getAbsolutePath());
                     localArrayList.add(Uri.fromFile(file1));
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
@@ -253,7 +278,14 @@ public class BaseWebViewActivity extends FragmentActivity {
         }else {
             waitingDialog.dismiss();
         }
-
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+
+        if(task!=null && !task.isCancelled()){
+            task.cancel(true);
+        }
+    }
 }

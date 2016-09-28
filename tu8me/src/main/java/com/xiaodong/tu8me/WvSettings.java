@@ -24,8 +24,8 @@ public class WvSettings {
         webSettings.setSupportZoom(true);
 
         webSettings.setDefaultTextEncodingName("utf-8");
-//      webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-        webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+      webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+//        webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
         webSettings.setUseWideViewPort(true);//设置此属性，可任意比例缩放
         webSettings.setLoadWithOverviewMode(true);//自适应屏幕：
 

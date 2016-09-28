@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.xiaodong.tu8me.ShuomingActivity">
+    <!--<TextView-->
+        <!--android:id="@+id/title"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="@string/app_name"-->
+        <!--android:gravity="center"-->
+        <!-- -->
+        <!--android:padding="@dimen/text_size_15dp"-->
+        <!--android:textColor="@color/color_white"-->
+        <!--android:background="@color/colorPrimary"/>-->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="@dimen/text_size_15dp"
+        android:textSize="20dp"
+        android:text="点击分享，等待片刻即可跳到微信页面\n请保持网络畅通（第一次分享是可能较慢）"/>
+
+</LinearLayout>
