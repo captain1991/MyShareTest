@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebChromeClient;
@@ -40,15 +41,19 @@ import java.util.Map;
 /**
  * Created by yxd on 2016/9/28.
  */
-public class BaseWebViewActivity extends FragmentActivity implements View.OnClickListener {
+public class BaseWebViewActivity extends FragmentActivity implements View.OnClickListener, SwipeRefreshLayout.OnRefreshListener {
     private WebView webView;
     private ProgressBar progressBar;
     private MyTask task;
     private TextView textView;
+    private SwipeRefreshLayout refreshLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_yqhy);
+        refreshLayout = (SwipeRefreshLayout) findViewById(R.id.refreshlayout);
+        refreshLayout.setOnRefreshListener(this);
         textView = (TextView) findViewById(R.id.shuoming);
         textView.setOnClickListener(this);
         webView = (WebView) findViewById(R.id.webView);
@@ -86,11 +91,13 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void workOnAndroid(String url, WebView view) {
-        Log.d("over====" , url);
+
+        Log.d("over====", url);
+        showOrDismissDialog(0);
         String action;
         String param;
         if (url.startsWith("myapp")) {
-            Log.d("myapp==========","myapp==========");
+            Log.d("myapp==========", "myapp==========");
             view.stopLoading();
             int start = url.indexOf("r/");
             String commond = url.substring(start + 2);
@@ -104,7 +111,7 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
 
             if (commond.contains("?")) {
                 param = commond.substring(commond.indexOf("?") + 1);
-                Log.d("param==========:" , param);
+                Log.d("param==========:", param);
 
                 if (param.contains("&")) {
                     String[] params = param.split("&");
@@ -176,11 +183,11 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
                 }
 
                 ClipData mClipData = ClipData.newPlainText("Label", des);
-                ((ClipboardManager)getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(mClipData);
+                ((ClipboardManager) getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(mClipData);
                 Log.e("content========", des);
                 Toast.makeText(BaseWebViewActivity.this, "标题已复制到剪贴板，可在分享页面直接粘贴", Toast.LENGTH_LONG).show();
                 task = new MyTask();
-                       task.execute(imgurl);
+                task.execute(imgurl);
 
 //                ArrayList localArrayList = new ArrayList();
 //                Log.e("path==========", Environment.getExternalStorageDirectory().getAbsolutePath());
@@ -201,59 +208,64 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
 
     @Override
     public void onClick(View v) {
-        Intent intent = new Intent(this,ShuomingActivity.class);
+        Intent intent = new Intent(this, ShuomingActivity.class);
         startActivity(intent);
     }
 
-    class MyTask extends AsyncTask<String,Void,ArrayList>{
+    @Override
+    public void onRefresh() {
+        webView.loadUrl("http://a.mjcydb.com/");
+        refreshLayout.setRefreshing(false);
+    }
+
+    class MyTask extends AsyncTask<String, Void, ArrayList> {
 
         @Override
         protected ArrayList doInBackground(String... params) {
-            showOrDismissDialog(0);
             ArrayList localArrayList = new ArrayList();
 
-            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),"immg");
-            if(!file.exists()){
+            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
+            if (!file.exists()) {
                 file.mkdir();
             }
             List<String> imgNames = new ArrayList<>();
             CommonUtils.clearCacheDir(file);
             String[] urls = params[0].split(";");
             int i = 0;
-            for(String u:urls){
-                if(i<8)
-                try {
-                    i++;
-                    Log.e("url====",u);
-                    String name = ""+System.currentTimeMillis()+".jpg";
-                    imgNames.add(name);
-                    File file1 = new File(file,name);
-                    FileOutputStream fos = new FileOutputStream(file1);
-                    URL url = new URL(u);
-                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                    urlConnection.setConnectTimeout(3000);
-                    urlConnection.connect();
-                    InputStream in = urlConnection.getInputStream();
+            for (String u : urls) {
+                if (i < 8)
+                    try {
+                        i++;
+                        Log.e("url====", u);
+                        String name = "" + System.currentTimeMillis() + ".jpg";
+                        imgNames.add(name);
+                        File file1 = new File(file, name);
+                        FileOutputStream fos = new FileOutputStream(file1);
+                        URL url = new URL(u);
+                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                        urlConnection.setConnectTimeout(3000);
+                        urlConnection.connect();
+                        InputStream in = urlConnection.getInputStream();
 
 //                    BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
-                    int len;
-                    byte[] bytes = new byte[1024];
+                        int len;
+                        byte[] bytes = new byte[1024];
 
-                    while ((len = in.read(bytes))>0) {
-                        fos.write(bytes,0,len);
+                        while ((len = in.read(bytes)) > 0) {
+                            fos.write(bytes, 0, len);
+                        }
+                        fos.flush();
+                        in.close();
+                        fos.close();
+                        Log.e("file1path====", file1.getAbsolutePath());
+                        localArrayList.add(Uri.fromFile(file1));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                    fos.flush();
-                    in.close();
-                    fos.close();
-                    Log.e("file1path====",file1.getAbsolutePath());
-                    localArrayList.add(Uri.fromFile(file1));
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
 
             return localArrayList;
@@ -271,21 +283,25 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         }
     }
 
-    private void showOrDismissDialog(int i){
-        WaitingDialog waitingDialog = WaitingDialog.getInstance().setMsg("请稍等");
-        if(i==0){
-            waitingDialog.show(getSupportFragmentManager(),"wating");
-        }else {
-            waitingDialog.dismiss();
+    WaitingDialog waitingDialog;
+
+    private void showOrDismissDialog(int i) {
+        if (waitingDialog == null) {
+            waitingDialog = WaitingDialog.getInstance().setMsg("请稍等");
+
+            waitingDialog.setOnCancleCallback(new MyEventCallBack() {
+                @Override
+                public void adapterEventCallBack(Object... args) {
+                    if (task != null && !task.isCancelled()) {
+                        task.cancel(true);
+                    }
+                }
+            });
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-
-        if(task!=null && !task.isCancelled()){
-            task.cancel(true);
+        if (i == 0) {
+            waitingDialog.show(getSupportFragmentManager(), "wating");
+        } else {
+            waitingDialog.dismiss();
         }
     }
 }

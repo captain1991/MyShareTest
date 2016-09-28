@@ -20,6 +20,6 @@
         android:layout_height="match_parent"
         android:padding="@dimen/text_size_15dp"
         android:textSize="20dp"
-        android:text="点击分享，等待片刻即可跳到微信页面\n请保持网络畅通（第一次分享是可能较慢）"/>
+        android:text="点击分享，等待片刻即可跳到微信页面\n请保持网络畅通（第一次分享是可能较慢）\n建议在wifi环境下使用"/>
 
 </LinearLayout>
