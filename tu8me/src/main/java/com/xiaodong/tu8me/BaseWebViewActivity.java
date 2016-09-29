@@ -291,12 +291,16 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         protected void onPostExecute(ArrayList arrayList) {
             showOrDismissDialog(1);
             if(arrayList!=null) {
-                Intent paramVarArgs = new Intent();
-                paramVarArgs.setComponent(new ComponentName("com.tencent.mm", "com.tencent.mm.ui.tools.ShareToTimeLineUI"));
-                paramVarArgs.setAction("android.intent.action.SEND_MULTIPLE");
-                paramVarArgs.setType("image/*");
-                paramVarArgs.putParcelableArrayListExtra("android.intent.extra.STREAM", arrayList);
-                startActivity(paramVarArgs);
+                try {
+                    Intent paramVarArgs = new Intent();
+                    paramVarArgs.setComponent(new ComponentName("com.tencent.mm", "com.tencent.mm.ui.tools.ShareToTimeLineUI"));
+                    paramVarArgs.setAction("android.intent.action.SEND_MULTIPLE");
+                    paramVarArgs.setType("image/*");
+                    paramVarArgs.putParcelableArrayListExtra("android.intent.extra.STREAM", arrayList);
+                    startActivity(paramVarArgs);
+                }catch (Exception e){
+                    Toast.makeText(BaseWebViewActivity.this,"未找到微信",Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
@@ -359,49 +363,51 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    private void copyImg(ArrayList localArrayList, String... params){
-        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
-        if (!file.exists()) {
-            file.mkdir();
-        }
-        List<String> imgNames = new ArrayList<>();
-        CommonUtils.clearCacheDir(file);
-        String[] urls = params[0].split(";");
-        int i = 0;
-        for (String u : urls) {
-            if (i < 8)
-                try {
-                    i++;
-                    Log.e("url====", u);
-                    String name = "" + System.currentTimeMillis() + ".jpg";
-                    imgNames.add(name);
-                    File file1 = new File(file, name);
-                    FileOutputStream fos = new FileOutputStream(file1);
-                    URL url = new URL(u);
-                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                    urlConnection.setConnectTimeout(3000);
-                    urlConnection.connect();
-                    InputStream in = urlConnection.getInputStream();
+    private void copyImg(ArrayList localArrayList, String... params) {
+        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
+            if (!file.exists()) {
+                file.mkdir();
+            }
+            List<String> imgNames = new ArrayList<>();
+            CommonUtils.clearCacheDir(file);
+            String[] urls = params[0].split(";");
+            int i = 0;
+            for (String u : urls) {
+                if (i < 8)
+                    try {
+                        i++;
+                        Log.e("url====", u);
+                        String name = "" + System.currentTimeMillis() + ".jpg";
+                        imgNames.add(name);
+                        File file1 = new File(file, name);
+                        FileOutputStream fos = new FileOutputStream(file1);
+                        URL url = new URL(u);
+                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                        urlConnection.setConnectTimeout(3000);
+                        urlConnection.connect();
+                        InputStream in = urlConnection.getInputStream();
 
 //                    BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
-                    int len;
-                    byte[] bytes = new byte[1024];
+                        int len;
+                        byte[] bytes = new byte[1024];
 
-                    while ((len = in.read(bytes)) > 0) {
-                        fos.write(bytes, 0, len);
+                        while ((len = in.read(bytes)) > 0) {
+                            fos.write(bytes, 0, len);
+                        }
+                        fos.flush();
+                        in.close();
+                        fos.close();
+                        Log.e("file1path====", file1.getAbsolutePath());
+                        localArrayList.add(Uri.fromFile(file1));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                    fos.flush();
-                    in.close();
-                    fos.close();
-                    Log.e("file1path====", file1.getAbsolutePath());
-                    localArrayList.add(Uri.fromFile(file1));
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            }
         }
     }
 
