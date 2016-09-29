@@ -1,16 +1,23 @@
 package com.xiaodong.tu8me;
 
+import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ComponentName;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.View;
@@ -47,12 +54,14 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
     private MyTask task;
     private TextView textView;
     private SwipeRefreshLayout refreshLayout;
+    private final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE =0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_yqhy);
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.refreshlayout);
+        refreshLayout.setColorSchemeResources(R.color.colorAccent);
         refreshLayout.setOnRefreshListener(this);
         textView = (TextView) findViewById(R.id.shuoming);
         textView.setOnClickListener(this);
@@ -224,49 +233,56 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         protected ArrayList doInBackground(String... params) {
             ArrayList localArrayList = new ArrayList();
 
-            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
-            if (!file.exists()) {
-                file.mkdir();
+            if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
+                getUserPermission(localArrayList,params);
+//                return null;
+            }else{
+                copyImg(localArrayList,params);
             }
-            List<String> imgNames = new ArrayList<>();
-            CommonUtils.clearCacheDir(file);
-            String[] urls = params[0].split(";");
-            int i = 0;
-            for (String u : urls) {
-                if (i < 8)
-                    try {
-                        i++;
-                        Log.e("url====", u);
-                        String name = "" + System.currentTimeMillis() + ".jpg";
-                        imgNames.add(name);
-                        File file1 = new File(file, name);
-                        FileOutputStream fos = new FileOutputStream(file1);
-                        URL url = new URL(u);
-                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                        urlConnection.setConnectTimeout(3000);
-                        urlConnection.connect();
-                        InputStream in = urlConnection.getInputStream();
 
-//                    BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
-                        int len;
-                        byte[] bytes = new byte[1024];
-
-                        while ((len = in.read(bytes)) > 0) {
-                            fos.write(bytes, 0, len);
-                        }
-                        fos.flush();
-                        in.close();
-                        fos.close();
-                        Log.e("file1path====", file1.getAbsolutePath());
-                        localArrayList.add(Uri.fromFile(file1));
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-            }
+//            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
+//            if (!file.exists()) {
+//                file.mkdir();
+//            }
+//            List<String> imgNames = new ArrayList<>();
+//            CommonUtils.clearCacheDir(file);
+//            String[] urls = params[0].split(";");
+//            int i = 0;
+//            for (String u : urls) {
+//                if (i < 8)
+//                    try {
+//                        i++;
+//                        Log.e("url====", u);
+//                        String name = "" + System.currentTimeMillis() + ".jpg";
+//                        imgNames.add(name);
+//                        File file1 = new File(file, name);
+//                        FileOutputStream fos = new FileOutputStream(file1);
+//                        URL url = new URL(u);
+//                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+//                        urlConnection.setConnectTimeout(3000);
+//                        urlConnection.connect();
+//                        InputStream in = urlConnection.getInputStream();
+//
+////                    BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
+//                        int len;
+//                        byte[] bytes = new byte[1024];
+//
+//                        while ((len = in.read(bytes)) > 0) {
+//                            fos.write(bytes, 0, len);
+//                        }
+//                        fos.flush();
+//                        in.close();
+//                        fos.close();
+//                        Log.e("file1path====", file1.getAbsolutePath());
+//                        localArrayList.add(Uri.fromFile(file1));
+//                    } catch (FileNotFoundException e) {
+//                        e.printStackTrace();
+//                    } catch (MalformedURLException e) {
+//                        e.printStackTrace();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//            }
 
             return localArrayList;
         }
@@ -274,12 +290,118 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         @Override
         protected void onPostExecute(ArrayList arrayList) {
             showOrDismissDialog(1);
-            Intent paramVarArgs = new Intent();
-            paramVarArgs.setComponent(new ComponentName("com.tencent.mm", "com.tencent.mm.ui.tools.ShareToTimeLineUI"));
-            paramVarArgs.setAction("android.intent.action.SEND_MULTIPLE");
-            paramVarArgs.setType("image/*");
-            paramVarArgs.putParcelableArrayListExtra("android.intent.extra.STREAM", arrayList);
-            startActivity(paramVarArgs);
+            if(arrayList!=null) {
+                Intent paramVarArgs = new Intent();
+                paramVarArgs.setComponent(new ComponentName("com.tencent.mm", "com.tencent.mm.ui.tools.ShareToTimeLineUI"));
+                paramVarArgs.setAction("android.intent.action.SEND_MULTIPLE");
+                paramVarArgs.setType("image/*");
+                paramVarArgs.putParcelableArrayListExtra("android.intent.extra.STREAM", arrayList);
+                startActivity(paramVarArgs);
+            }
+        }
+    }
+
+    private void getUserPermission(ArrayList localArrayList, String... params){
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED){
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("提示");
+                builder.setMessage("当前应用缺少必要权限。请点击\"设置\"-\"权限\"-打开所需权限。");
+
+                // 拒绝, 退出应用
+                builder.setNegativeButton("取消",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+//                                finish();
+                                dialog.dismiss();
+                            }
+                        });
+
+                builder.setPositiveButton("设置",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Intent intent = new Intent(
+                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                intent.setData(Uri.parse("package:" + getPackageName()));
+                                startActivity(intent);
+                            }
+                        });
+                builder.setCancelable(false);
+                builder.show();
+
+            }else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_PHONE_STATE},
+                        MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
+            }
+        }else {
+            copyImg(localArrayList,params);
+        }
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if(requestCode == MY_PERMISSIONS_REQUEST_READ_PHONE_STATE){
+            if(grantResults[0]==PackageManager.PERMISSION_GRANTED){
+//                uuid = CommonUtil.getUUID(LoginActivityNew.this);
+                Toast.makeText(BaseWebViewActivity.this, "已获取相关权限，请重新分享", Toast.LENGTH_SHORT).show();
+            }else {
+                Toast.makeText(BaseWebViewActivity.this, "请同意相关权限", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private void copyImg(ArrayList localArrayList, String... params){
+        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
+        if (!file.exists()) {
+            file.mkdir();
+        }
+        List<String> imgNames = new ArrayList<>();
+        CommonUtils.clearCacheDir(file);
+        String[] urls = params[0].split(";");
+        int i = 0;
+        for (String u : urls) {
+            if (i < 8)
+                try {
+                    i++;
+                    Log.e("url====", u);
+                    String name = "" + System.currentTimeMillis() + ".jpg";
+                    imgNames.add(name);
+                    File file1 = new File(file, name);
+                    FileOutputStream fos = new FileOutputStream(file1);
+                    URL url = new URL(u);
+                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setConnectTimeout(3000);
+                    urlConnection.connect();
+                    InputStream in = urlConnection.getInputStream();
+
+//                    BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
+                    int len;
+                    byte[] bytes = new byte[1024];
+
+                    while ((len = in.read(bytes)) > 0) {
+                        fos.write(bytes, 0, len);
+                    }
+                    fos.flush();
+                    in.close();
+                    fos.close();
+                    Log.e("file1path====", file1.getAbsolutePath());
+                    localArrayList.add(Uri.fromFile(file1));
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
         }
     }
 
