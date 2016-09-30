@@ -15,3 +15,12 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+-keepattributes *Annotation*
+-keepattributes *JavascriptInterface*
+-keep class android.webkit.JavascriptInterface {*;}
+
+#项目中所有调用js的类都应在此处注册，避免混淆，禁止所有的js方法混淆；
+-keepclassmembers class com.xiaodong.tu8me.BaseWebViewActivity$MainJieInterface{
+  public *;
+}
+

@@ -21,6 +21,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.View;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -29,12 +30,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.xiaodong.tu8me.utils.CommonUtils;
+import com.xiaodong.tu8me.utils.SpUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -54,7 +57,7 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
     private MyTask task;
     private TextView textView;
     private SwipeRefreshLayout refreshLayout;
-    private final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE =0;
+    private final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +71,9 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         webView = (WebView) findViewById(R.id.webView);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         WvSettings.setting(webView);
+        webView.addJavascriptInterface(new MainJieInterface(),"cydb");
         webView.setWebChromeClient(new WebChromeClient() {
+
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 if (newProgress == 100) {
@@ -81,6 +86,89 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         });
 
         webView.setWebViewClient(new WebViewClient() {
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                view.loadUrl("javascript:" +
+                                "function setSpan(){ " +
+                                "var mspans = document.getElementsByTagName(\"span\"); " +
+                                "for(var i=0;i<mspans.length;i++){" +
+                                "var hhr;" +
+                                "hhr = $(mspans[i]).attr(\"id\");" +
+                                "if(hhr!=null){" +
+                                "var isshare = window.cydb.isShared(hhr);" +
+                                "if(isshare){" +
+                                "mspans[i].style.color = \"#D45656\";" +
+                                "}}" +
+//                        "mspans[2].innerHTML = \"已分享\"" +
+//                        "mspans[i].href= hhr;" +
+                                "} " +
+                                "var mp = document.getElementsByTagName(\"p\");" +
+                                "for(var i=0;i<mp.length;i++){" +
+                                "  var ppp;" +
+                                "  ppp =  $(mp[i]).attr(\"id\");" +
+                                "  if(ppp != null){" +
+                                "  var isshare = window.cydb.isShared(ppp);" +
+                                "  if(isshare){" +
+                                "    mp[i].style.color = \"#D45656\";" +
+                                "}" +
+                                "}" +
+                                "}" +
+                                "}" +
+                                "" +
+                                " function changeText(id){" +
+                                "var mspans = document.getElementsByTagName(\"span\");" +
+                                "mspans[id].style.color = \"#D45656\"; " +
+                                "}" +
+                                "" +
+//                                "function changeSpanColor(id){" +
+//                                " " +
+//                                "}" +
+                                "" +
+                                "function changeColor(data){" +
+//                                "var ids = data.bean.ids;" +
+                                "for(var i=0;i<data.length;i++){" +
+//                                "alert(data[i]);" +
+                                   "var food = document.getElementById(data[i]);" +
+                                "if(food != null){" +
+                                "food.style.color = \"#D45656\";" +
+                                "}" +
+                                "" +
+//                                "var pa = food.parentElement;" +
+//                                "var child = pa.childNodes;" +
+//                                "child[1].style.color = \" #45656\";" +
+//                                "var mspans = document.getElementsByTagName(\"span\");" +
+//                                "for(var i=0;i<mspans.length;i++){" +
+//                                "mspans[i]" +
+//                                "}" +
+//                                "var sp = food.getElementsByTagName(\"span\");
+//
+//                                   "food.style.color = \"#D45656\";" +
+//                                "if(food !=null && food.length!=0){" +
+//                                "for(var j=0;j<food.length;j++){" +
+//                                "food[j].style.color = \"#D45656\";" +
+//                                "}" +
+//                                "}" +
+                                "}" +
+                                "}" +
+                                "setSpan();"
+//                                "var oldPage = _pagenow;" +
+////                                "var oldheight = $(document).height();" +
+//                                "$(this).scroll(function () {\n" +
+////                                "var nheight = $(document).height();" +
+//                                "if(oldPage<_pagenow)" +
+//                                "        {" +
+//                                "oldPage = _pagenow;" +
+////                                "setSpan();" +
+//                                "window.cydb.onLoadmoreLisn();" +
+////                                "oldheight=nheight;" +
+////                                "setSpan();oldheight=nheight;" +
+//                                "}\n" +
+//                                "    }); "
+                );
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
 //                dealResponse = true;
@@ -90,6 +178,45 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         });
 
         webView.loadUrl("http://a.mjcydb.com/");
+    }
+
+    class Bean implements Serializable {
+        final int[] ids = new int[]{143,142,141};
+    }
+
+    final class MainJieInterface{
+
+        @JavascriptInterface
+        public void onLoadmoreLisn(){
+            final int[] ids = new int[]{143,142,141};
+            webView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+//                    Map<String,int[]> map = new HashMap<String, int[]>();
+//                    map.put("ids",ids);
+//                    JSONArray jsonObject = null;
+//                    try {
+//                        jsonObject = new JSONArray(ids);
+//                    } catch (JSONException e) {
+//                        e.printStackTrace();
+//                    }
+//                    webView.loadUrl("javascript:changeColor("+jsonObject+")");
+                    webView.loadUrl("javascript:setSpan()");
+                }
+            },500);
+
+            Log.d("succeed==========","onLoadmore============");
+        }
+
+        @JavascriptInterface
+        public boolean isShared(String id){
+            if(SpUtil.getSpBooleanValueByKey(BaseWebViewActivity.this,id,false)){
+
+                return true;
+            }
+
+            return false;
+        }
     }
 
     /**
@@ -194,6 +321,7 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
                 ClipData mClipData = ClipData.newPlainText("Label", des);
                 ((ClipboardManager) getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(mClipData);
                 Log.e("content========", des);
+//                Log.e("id========", map.get("id"));
                 Toast.makeText(BaseWebViewActivity.this, "标题已复制到剪贴板，可在分享页面直接粘贴", Toast.LENGTH_LONG).show();
                 task = new MyTask();
                 task.execute(imgurl);
@@ -211,6 +339,7 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
 
             }
         } else if (url.startsWith("http")) {
+            showOrDismissDialog(1);
             view.loadUrl(url);
         }
     }
@@ -233,11 +362,11 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         protected ArrayList doInBackground(String... params) {
             ArrayList localArrayList = new ArrayList();
 
-            if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
-                getUserPermission(localArrayList,params);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                getUserPermission(localArrayList, params);
 //                return null;
-            }else{
-                copyImg(localArrayList,params);
+            } else {
+                copyImg(localArrayList, params);
             }
 
 //            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
@@ -290,7 +419,9 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         @Override
         protected void onPostExecute(ArrayList arrayList) {
             showOrDismissDialog(1);
-            if(arrayList!=null) {
+            SpUtil.save2SpBoolean(BaseWebViewActivity.this,map.get("id"), true);
+            webView.loadUrl("javascript:setSpan()");
+            if (arrayList != null) {
                 try {
                     Intent paramVarArgs = new Intent();
                     paramVarArgs.setComponent(new ComponentName("com.tencent.mm", "com.tencent.mm.ui.tools.ShareToTimeLineUI"));
@@ -298,19 +429,19 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
                     paramVarArgs.setType("image/*");
                     paramVarArgs.putParcelableArrayListExtra("android.intent.extra.STREAM", arrayList);
                     startActivity(paramVarArgs);
-                }catch (Exception e){
-                    Toast.makeText(BaseWebViewActivity.this,"未找到微信",Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(BaseWebViewActivity.this, "未找到微信", Toast.LENGTH_SHORT).show();
                 }
             }
         }
     }
 
-    private void getUserPermission(ArrayList localArrayList, String... params){
+    private void getUserPermission(ArrayList localArrayList, String... params) {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED){
+                != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("提示");
                 builder.setMessage("当前应用缺少必要权限。请点击\"设置\"-\"权限\"-打开所需权限。");
@@ -338,24 +469,24 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
                 builder.setCancelable(false);
                 builder.show();
 
-            }else {
+            } else {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.READ_PHONE_STATE},
                         MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
             }
-        }else {
-            copyImg(localArrayList,params);
+        } else {
+            copyImg(localArrayList, params);
         }
 
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if(requestCode == MY_PERMISSIONS_REQUEST_READ_PHONE_STATE){
-            if(grantResults[0]==PackageManager.PERMISSION_GRANTED){
+        if (requestCode == MY_PERMISSIONS_REQUEST_READ_PHONE_STATE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 //                uuid = CommonUtil.getUUID(LoginActivityNew.this);
                 Toast.makeText(BaseWebViewActivity.this, "已获取相关权限，请重新分享", Toast.LENGTH_SHORT).show();
-            }else {
+            } else {
                 Toast.makeText(BaseWebViewActivity.this, "请同意相关权限", Toast.LENGTH_SHORT).show();
             }
             return;
@@ -374,39 +505,39 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
             String[] urls = params[0].split(";");
             int i = 0;
             for (String u : urls) {
-                if (i < 8)
-                    try {
-                        i++;
-                        Log.e("url====", u);
-                        String name = "" + System.currentTimeMillis() + ".jpg";
-                        imgNames.add(name);
-                        File file1 = new File(file, name);
-                        FileOutputStream fos = new FileOutputStream(file1);
-                        URL url = new URL(u);
-                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                        urlConnection.setConnectTimeout(3000);
-                        urlConnection.connect();
-                        InputStream in = urlConnection.getInputStream();
+//                if (i < 8)
+                try {
+                    i++;
+                    Log.e("url====", u);
+                    String name = "" + System.currentTimeMillis() + ".jpg";
+                    imgNames.add(name);
+                    File file1 = new File(file, name);
+                    FileOutputStream fos = new FileOutputStream(file1);
+                    URL url = new URL(u);
+                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setConnectTimeout(3000);
+                    urlConnection.connect();
+                    InputStream in = urlConnection.getInputStream();
 
 //                    BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
-                        int len;
-                        byte[] bytes = new byte[1024];
+                    int len;
+                    byte[] bytes = new byte[1024];
 
-                        while ((len = in.read(bytes)) > 0) {
-                            fos.write(bytes, 0, len);
-                        }
-                        fos.flush();
-                        in.close();
-                        fos.close();
-                        Log.e("file1path====", file1.getAbsolutePath());
-                        localArrayList.add(Uri.fromFile(file1));
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    while ((len = in.read(bytes)) > 0) {
+                        fos.write(bytes, 0, len);
                     }
+                    fos.flush();
+                    in.close();
+                    fos.close();
+                    Log.e("file1path====", file1.getAbsolutePath());
+                    localArrayList.add(Uri.fromFile(file1));
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
