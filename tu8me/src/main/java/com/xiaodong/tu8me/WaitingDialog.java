@@ -20,7 +20,7 @@ import android.widget.TextView;
 public class WaitingDialog extends DialogFragment {
 
     private String title = "提示";
-    private String msg = "正在获取银行卡信息...";
+    private String msg = "请稍等...";
     private static WaitingDialog waitingDialog;
     private MyEventCallBack myEventCallBack;
 

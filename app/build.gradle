@@ -1,0 +1,67 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    defaultConfig {
+        applicationId "com.ayd.rhcf"
+        minSdkVersion 9
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    productFlavors {
+        // 应用宝；
+        yingyongbao {
+            manifestPlaceholders = [CHANNEL_ID: "yingyongbao"]
+        }
+//        360手机助手
+        shoujizhushou360 {
+            manifestPlaceholders = [CHANNEL_ID: "shoujizhushou360"]
+        }
+//        百度手机助手
+        baidusjzs {
+            manifestPlaceholders = [CHANNEL_ID: "baidusjzs"]
+        }
+//        豌豆荚
+        wandoujia {
+            manifestPlaceholders = [CHANNEL_ID: "wandoujia"]
+        }
+    }
+    useLibrary 'org.apache.http.legacy'
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+//程序在buid的时候，会执行lint检查，有任何的错误或者警告提示，都会终止构建，我们可以将其关掉。
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.2.1'
+    compile files('libs/umeng_social_sdk.jar')
+    compile files('libs/mta-sdk-1.6.2.jar')
+    compile files('libs/open_sdk_r5509.jar')
+    compile files('libs/SocialSDK_QQZone_3.jar')
+    compile files('libs/SocialSDK_Sina.jar')
+    compile files('libs/SocialSDK_sms.jar')
+    compile files('libs/SocialSDK_WeiXin_1.jar')
+    compile files('libs/SocialSDK_WeiXin_2.jar')
+    compile files('libs/weiboSDKCore_3.1.4.jar')
+    compile 'com.android.support:support-v4:23.2.1'
+}

@@ -70,7 +70,7 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         textView.setOnClickListener(this);
         webView = (WebView) findViewById(R.id.webView);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        WvSettings.setting(webView);
+        WvSettings.setting(webView,this);
         webView.addJavascriptInterface(new MainJieInterface(),"cydb");
         webView.setWebChromeClient(new WebChromeClient() {
 
@@ -419,7 +419,7 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         @Override
         protected void onPostExecute(ArrayList arrayList) {
             showOrDismissDialog(1);
-            SpUtil.save2SpBoolean(BaseWebViewActivity.this,map.get("id"), true);
+            SpUtil.save2SpBoolean(BaseWebViewActivity.this, map.get("id"), true);
             webView.loadUrl("javascript:setSpan()");
             if (arrayList != null) {
                 try {
