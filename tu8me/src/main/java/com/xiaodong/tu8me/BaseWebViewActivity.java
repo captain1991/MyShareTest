@@ -14,6 +14,8 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.ContactsContract;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
@@ -41,6 +43,7 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -57,12 +60,22 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
     private MyTask task;
     private TextView textView;
     private SwipeRefreshLayout refreshLayout;
-    private final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 0;
+    private final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 100;
+    String des = "";//发布的文字
+    /**
+     * 微信7.0版本号，兼容处理微信7.0版本分享到朋友圈不支持多图片的问题
+     */
+    private static final int VERSION_CODE_FOR_WEI_XIN_VER7 = 1380;
+    /**
+     * 微信包名
+     */
+    public static final String PACKAGE_NAME_WEI_XIN = "com.tencent.mm";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_yqhy);
+        Log.d("onCreate","BRAND==="+Build.BOARD);
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.refreshlayout);
         refreshLayout.setColorSchemeResources(R.color.colorAccent);
         refreshLayout.setOnRefreshListener(this);
@@ -300,32 +313,17 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
 
 
             if (action.equals("appshare")) {
-//                String title = "";
-//                if (map.containsKey("title")) {
-//                    title = map.get("title");
-//                }
-                String count = "";
-                if (map.containsKey("count")) {
-                    count = map.get("des");
-                }
+                if (ContextCompat.checkSelfPermission(BaseWebViewActivity.this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(BaseWebViewActivity.this,
+                            new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
 
-                String des = "";
-                if (map.containsKey("des")) {
-                    des = map.get("des");
+                    //Manifest.permission.READ_PHONE_STATE,
+                } else {
+                    clickShare();
                 }
-                String imgurl = "";
-                if (map.containsKey("imgurl")) {
-                    imgurl = map.get("imgurl");
-                }
-
-                ClipData mClipData = ClipData.newPlainText("Label", des);
-                ((ClipboardManager) getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(mClipData);
-                Log.e("content========", des);
-//                Log.e("id========", map.get("id"));
-                Toast.makeText(BaseWebViewActivity.this, "标题已复制到剪贴板，可在分享页面直接粘贴", Toast.LENGTH_LONG).show();
-                task = new MyTask();
-                task.execute(imgurl);
-
 //                ArrayList localArrayList = new ArrayList();
 //                Log.e("path==========", Environment.getExternalStorageDirectory().getAbsolutePath());
 //                localArrayList.add(Uri.fromFile(new File(Environment.getExternalStorageDirectory(), "equipment150827144924.jpg")));
@@ -344,6 +342,30 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
         }
     }
 
+    private void clickShare(){
+        String count = "";
+        if (map.containsKey("count")) {
+            count = map.get("des");
+        }
+
+
+        if (map.containsKey("des")) {
+            des = map.get("des").replace("<br>","");
+        }
+        String imgurl = "";
+        if (map.containsKey("imgurl")) {
+            imgurl = map.get("imgurl");
+        }
+
+        ClipData mClipData = ClipData.newPlainText("Label", des);
+        ((ClipboardManager) getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(mClipData);
+        Log.e("content========", des);
+//                Log.e("id========", map.get("id"));
+        Toast.makeText(BaseWebViewActivity.this, "标题已复制到剪贴板，可在分享页面直接粘贴", Toast.LENGTH_LONG).show();
+        task = new MyTask();
+        task.execute(imgurl);
+    }
+
     @Override
     public void onClick(View v) {
         Intent intent = new Intent(this, ShuomingActivity.class);
@@ -360,89 +382,75 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
 
         @Override
         protected ArrayList doInBackground(String... params) {
-            ArrayList localArrayList = new ArrayList();
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                getUserPermission(localArrayList, params);
-//                return null;
-            } else {
-                copyImg(localArrayList, params);
-            }
-
-//            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
-//            if (!file.exists()) {
-//                file.mkdir();
-//            }
-//            List<String> imgNames = new ArrayList<>();
-//            CommonUtils.clearCacheDir(file);
-//            String[] urls = params[0].split(";");
-//            int i = 0;
-//            for (String u : urls) {
-//                if (i < 8)
-//                    try {
-//                        i++;
-//                        Log.e("url====", u);
-//                        String name = "" + System.currentTimeMillis() + ".jpg";
-//                        imgNames.add(name);
-//                        File file1 = new File(file, name);
-//                        FileOutputStream fos = new FileOutputStream(file1);
-//                        URL url = new URL(u);
-//                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-//                        urlConnection.setConnectTimeout(3000);
-//                        urlConnection.connect();
-//                        InputStream in = urlConnection.getInputStream();
-//
-////                    BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
-//                        int len;
-//                        byte[] bytes = new byte[1024];
-//
-//                        while ((len = in.read(bytes)) > 0) {
-//                            fos.write(bytes, 0, len);
-//                        }
-//                        fos.flush();
-//                        in.close();
-//                        fos.close();
-//                        Log.e("file1path====", file1.getAbsolutePath());
-//                        localArrayList.add(Uri.fromFile(file1));
-//                    } catch (FileNotFoundException e) {
-//                        e.printStackTrace();
-//                    } catch (MalformedURLException e) {
-//                        e.printStackTrace();
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//            }
-
+            ArrayList<Uri> localArrayList = new ArrayList<>();
+            copyImg(localArrayList, params);
             return localArrayList;
         }
 
         @Override
         protected void onPostExecute(ArrayList arrayList) {
             showOrDismissDialog(1);
-            SpUtil.save2SpBoolean(BaseWebViewActivity.this, map.get("id"), true);
-            webView.loadUrl("javascript:setSpan()");
-            if (arrayList != null) {
-                try {
-                    Intent paramVarArgs = new Intent();
-                    paramVarArgs.setComponent(new ComponentName("com.tencent.mm", "com.tencent.mm.ui.tools.ShareToTimeLineUI"));
-                    paramVarArgs.setAction("android.intent.action.SEND_MULTIPLE");
-                    paramVarArgs.setType("image/*");
-                    paramVarArgs.putParcelableArrayListExtra("android.intent.extra.STREAM", arrayList);
-                    startActivity(paramVarArgs);
-                } catch (Exception e) {
-                    Toast.makeText(BaseWebViewActivity.this, "未找到微信", Toast.LENGTH_SHORT).show();
-                }
+            if (arrayList != null&&arrayList.size()>0) {
+                SpUtil.save2SpBoolean(BaseWebViewActivity.this, map.get("id"), true);
+                webView.loadUrl("javascript:setSpan()");
+                openWeChat();
+//                try {
+//                    Intent paramVarArgs = new Intent();
+//                    paramVarArgs.setComponent(new ComponentName("com.tencent.mm", "com.tencent.mm.ui.tools.ShareToTimeLineUI"));
+//                    paramVarArgs.setAction("android.intent.action.SEND_MULTIPLE");
+//                    paramVarArgs.setType("image/*");
+////                    paramVarArgs.putParcelableArrayListExtra(Intent.EXTRA_STREAM, arrayList);
+//                    paramVarArgs.putExtra("Kdescription", des);
+//                    if (CommonUtils.getVersionCode(BaseWebViewActivity.this,PACKAGE_NAME_WEI_XIN) < VERSION_CODE_FOR_WEI_XIN_VER7) {
+//                        // 微信7.0以下版本
+//                        paramVarArgs.setAction(Intent.ACTION_SEND_MULTIPLE);
+//                        paramVarArgs.putParcelableArrayListExtra(Intent.EXTRA_STREAM, arrayList);
+//                    } else {
+//                        // 微信7.0及以上版本
+//                        paramVarArgs.setAction(Intent.ACTION_SEND);
+//                        paramVarArgs.putExtra(Intent.EXTRA_STREAM, (Uri)arrayList.get(0));
+//                    }
+//                     startActivity(paramVarArgs);
+//                } catch (Exception e) {
+//                    Toast.makeText(BaseWebViewActivity.this, "未找到微信", Toast.LENGTH_SHORT).show();
+//                }
             }
         }
     }
 
-    private void getUserPermission(ArrayList localArrayList, String... params) {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    //打开微信启动页
+    private void openWeChat(){
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        ComponentName cmp = new ComponentName("com.tencent.mm","com.tencent.mm.ui.LauncherUI");
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setComponent(cmp);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == MY_PERMISSIONS_REQUEST_READ_PHONE_STATE) {
+            for(int result:grantResults){
+                if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                    showDialog();
+                    return;
+                }
+            }
+            clickShare();
+//            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+////                uuid = CommonUtil.getUUID(LoginActivityNew.this);
+//                Toast.makeText(BaseWebViewActivity.this, "已获取相关权限，请重新分享", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Toast.makeText(BaseWebViewActivity.this, "请同意相关权限", Toast.LENGTH_SHORT).show();
+//            }
+
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private void showDialog(){
+           AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("提示");
                 builder.setMessage("当前应用缺少必要权限。请点击\"设置\"-\"权限\"-打开所需权限。");
 
@@ -468,40 +476,25 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
                         });
                 builder.setCancelable(false);
                 builder.show();
-
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_PHONE_STATE},
-                        MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
-            }
-        } else {
-            copyImg(localArrayList, params);
-        }
-
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == MY_PERMISSIONS_REQUEST_READ_PHONE_STATE) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                uuid = CommonUtil.getUUID(LoginActivityNew.this);
-                Toast.makeText(BaseWebViewActivity.this, "已获取相关权限，请重新分享", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(BaseWebViewActivity.this, "请同意相关权限", Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     private void copyImg(ArrayList localArrayList, String... params) {
+        Log.d("copyImg","BRAND==="+Build.BOARD);
         if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
+            File file;
+            if(Build.BRAND.equals("Xiaomi")){
+                file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath(),"Camera");
+//            file = new File(Environment.getExternalStorageDirectory().getPath()+"/DCIM/Camera/");
+            }else {
+                file = new File(Environment.getExternalStorageDirectory().getPath()+"/tencent/MicroMsg/WeiXin");
+//                 file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "immg");
+            }
+//            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "Pictures");
             if (!file.exists()) {
                 file.mkdir();
             }
             List<String> imgNames = new ArrayList<>();
-            CommonUtils.clearCacheDir(file);
+//            CommonUtils.clearCacheDir(file);
             String[] urls = params[0].split(";");
             int i = 0;
             for (String u : urls) {
@@ -509,7 +502,7 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
                 try {
                     i++;
                     Log.e("url====", u);
-                    String name = "" + System.currentTimeMillis() + ".jpg";
+                    String name = "wx_camera_" + System.currentTimeMillis() + ".jpg";
                     imgNames.add(name);
                     File file1 = new File(file, name);
                     FileOutputStream fos = new FileOutputStream(file1);
@@ -530,7 +523,20 @@ public class BaseWebViewActivity extends FragmentActivity implements View.OnClic
                     in.close();
                     fos.close();
                     Log.e("file1path====", file1.getAbsolutePath());
-                    localArrayList.add(Uri.fromFile(file1));
+//                    localArrayList.add(Uri.fromFile(file1));
+
+//                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                        localArrayList.add(Uri.fromFile(file1));
+//                    }else {
+//                        //修复微信在7.0崩溃的问题
+//                        Uri uri =Uri.parse(android.provider.MediaStore.Images.Media.insertImage(getContentResolver(), file1.getAbsolutePath(), name, null));
+//                        localArrayList.add(uri);
+//                    }
+//                    if(Build.BRAND.equals("Xiaomi")) {
+                        // 把文件插入到系统图库
+                        MediaStore.Images.Media.insertImage(getApplication().getContentResolver(), file1.getAbsolutePath(), name, null);
+                        getApplication().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + "")));
+//                    }
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 } catch (MalformedURLException e) {
